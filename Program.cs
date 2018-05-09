@@ -10,6 +10,10 @@ namespace BatchVerify
     {
         static void Main(string[] args)
         {
+            BatchScanner.Start();
+
+            
+            Console.ReadKey();
         }
     }
 }
