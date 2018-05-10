@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BatchVerify
 {
+    [Serializable()]
     public class ScanQueue
     {
         public string QueueTable { get; set; }
@@ -18,6 +16,10 @@ namespace BatchVerify
 
         public List<Batch> Batches { get; set; }
 
+        public ScanQueue()
+        {
+        }
+
         public ScanQueue(string queueTable, string name, int id, string owner)
         {
             QueueTable = queueTable;
@@ -26,6 +28,5 @@ namespace BatchVerify
             Owner = owner;
             Batches = new List<Batch>();
         }
-
     }
 }

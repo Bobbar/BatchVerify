@@ -1,11 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace BatchVerify
 {
+    [Serializable()]
     public class Batch
     {
         public string BatchTable { get; set; }
@@ -20,6 +18,10 @@ namespace BatchVerify
 
         public List<string> MissingFiles { get; set; }
 
+        public Batch()
+        {
+        }
+
         public Batch(string batchTable, int id, int pageCount, string name)
         {
             BatchTable = batchTable;
@@ -29,6 +31,5 @@ namespace BatchVerify
             Verified = false;
             MissingFiles = new List<string>();
         }
-
     }
 }

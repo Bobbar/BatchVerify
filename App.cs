@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace BatchVerify
 {
+    [Serializable()]
     public class App
     {
         public int ID { get; set; }
@@ -13,6 +14,10 @@ namespace BatchVerify
         public string Name { get; set; }
 
         public List<ScanQueue> Queues { get; set; }
+
+        public App()
+        {
+        }
 
         public App(int id, string name)
         {
