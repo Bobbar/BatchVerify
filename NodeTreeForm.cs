@@ -26,6 +26,12 @@ namespace BatchVerify
                 foreach (var queue in app.Queues)
                 {
                     var queueNode = new TreeNode("QueueID: " + queue.ID + "  Name: " + queue.Name + "  Owner: " + queue.Owner + "  Batch Count: " + queue.Batches.Count);
+                    queueNode.BackColor = Color.DarkGreen;
+
+                    if (HasBadBatches(queue))
+                    {
+                        queueNode.BackColor = Color.DarkRed;
+                    }
 
                     foreach (var batch in queue.Batches)
                     {
@@ -66,6 +72,11 @@ namespace BatchVerify
             NodeTree.Nodes[0].Expand();
 
             this.ShowDialog();
+        }
+
+        private bool HasBadBatches(ScanQueue queue)
+        {
+            return (queue.Batches.FindAll(b => !b.Verified).Count > 0);
         }
     }
 }

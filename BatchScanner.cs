@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace BatchVerify
 {
@@ -12,6 +14,7 @@ namespace BatchVerify
 
         private static long totalItems = 0;
         private static long scannedItems = 0;
+        private static long lastUpdate = 0;
 
         private static string consoleTitle = "Scanning Batches: ";
 
@@ -42,13 +45,15 @@ namespace BatchVerify
                 appList = Serializer.DeSerializeAppList();
             }
 
-            DisplayResultsConsole(appList);
+            //  DisplayResultsConsole(appList);
 
             DisplayResultsNodeTree(appList);
         }
 
         private static void StartNewScan()
         {
+            var startTime = DateTime.Now.Ticks;
+
             // Populate the app list from DB.
             appList = GetAppList();
 
@@ -63,6 +68,9 @@ namespace BatchVerify
 
             // Serialize the results to disk for later viewing.
             Serializer.SerializeAppList(appList);
+
+            var elapTime = (DateTime.Now.Ticks - startTime) / 10000 / 1000;
+            Console.WriteLine(totalItems + " files scanned in " + elapTime + " seconds.");
         }
 
         /// <summary>
@@ -127,7 +135,7 @@ namespace BatchVerify
                         }
                     }
                 }
-                Console.WriteLine();
+                Console.WriteLine("\n");
             }
         }
 
@@ -172,9 +180,20 @@ namespace BatchVerify
         {
             if (scannedItems <= 0) return;
 
-            int percent = (int)((scannedItems / (float)totalItems) * 100);
+            // Logic to limit the rate of updates.
+            var minUpdateRate = 100; // Minimum milliseconds between updates.
+            var currentTick = DateTime.Now.Ticks;
 
-            Console.Title = consoleTitle + percent + "%";
+            if (lastUpdate == 0) lastUpdate = currentTick;
+
+            var elapTime = (currentTick - lastUpdate) / 10000;
+
+            if (elapTime >= minUpdateRate | scannedItems == totalItems)
+            {
+                int percent = (int)((scannedItems / (float)totalItems) * 100);
+                Console.Title = consoleTitle + percent + "%";
+                lastUpdate = currentTick;
+            }
         }
 
         /// <summary>
@@ -192,42 +211,41 @@ namespace BatchVerify
 
                 Console.WriteLine("Verifying Queue: " + queue.QueueTable + " ID:" + queue.ID + " Name: " + queue.Name + " Owner: " + queue.Owner);
 
-                // Iterate batches.
-                for (int b = 0; b < queue.Batches.Count; b++)
-                {
-                    var batch = queue.Batches[b];
-
-                    Console.WriteLine(queue.Name + " - Batch " + b + " of " + queue.Batches.Count);
-
-                    bool verified = true;
-
-                    // Iterate batch pages.
-                    for (int i = 0; i < batch.PageCount; i++)
+                // Iterate batches in parallel.
+                Parallel.For(0, queue.Batches.Count,
+                    index =>
                     {
-                        // Non-zero based file index.
-                        // Build the filename and paths.
-                        int fileIdx = i + 1;
-                        string fileName = batch.ID.ToString("00000") + fileIdx.ToString("00000");
-                        string filePath = scanQPath + "APP" + app.ID.ToString("0000") + @"\" + queue.ID + @".que\" + fileName;
+                        var batch = queue.Batches[index];
 
-                        // Check if the file on disk is present.
-                        if (!File.Exists(filePath))
+                        bool verified = true;
+
+                        // Iterate batch pages.
+                        for (int i = 0; i < batch.PageCount; i++)
                         {
-                            // If not, set the verified bool and add the file info to a list.
-                            verified = false;
-                            batch.MissingFiles.Add("[" + fileIdx + "] - " + fileName);
+                            // Non-zero based file index.
+                            // Build the filename and paths.
+                            int fileIdx = i + 1;
+                            string fileName = batch.ID.ToString("00000") + fileIdx.ToString("00000");
+                            string filePath = scanQPath + "APP" + app.ID.ToString("0000") + @"\" + queue.ID + @".que\" + fileName;
+
+                            // Check if the file on disk is present.
+                            if (!File.Exists(filePath))
+                            {
+                                // If not, set the verified bool and add the file info to a list.
+                                verified = false;
+                                batch.MissingFiles.Add("[" + fileIdx + "] - " + fileName);
+                            }
+
+                            // Increment scanned items for progress tracking.
+                            Interlocked.Increment(ref scannedItems);
                         }
 
-                        // Increment scanned items for progress tracking.
-                        scannedItems++;
-                    }
+                        // Set the batch verified bool.
+                        batch.Verified = verified;
 
-                    // Set the batch verified bool.
-                    batch.Verified = verified;
-
-                    // Update progress.
-                    DisplayProgress();
-                }
+                        // Update progress.
+                        DisplayProgress();
+                    });
             }
         }
 
