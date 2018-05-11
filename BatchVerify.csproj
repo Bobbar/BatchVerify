@@ -75,20 +75,20 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="App.cs" />
-    <Compile Include="Batch.cs" />
-    <Compile Include="BatchScanner.cs" />
-    <Compile Include="IvueConnection.cs" />
-    <Compile Include="NodeTreeForm.cs">
+    <Compile Include="Containers\App.cs" />
+    <Compile Include="Containers\Batch.cs" />
+    <Compile Include="Scanning\BatchScanner.cs" />
+    <Compile Include="Data\IvueConnection.cs" />
+    <Compile Include="UI\NodeTreeForm.cs">
       <SubType>Form</SubType>
     </Compile>
-    <Compile Include="NodeTreeForm.Designer.cs">
+    <Compile Include="UI\NodeTreeForm.Designer.cs">
       <DependentUpon>NodeTreeForm.cs</DependentUpon>
     </Compile>
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ScanQueue.cs" />
-    <Compile Include="Serializer.cs" />
+    <Compile Include="Containers\ScanQueue.cs" />
+    <Compile Include="Data\Serializer.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config">
@@ -97,7 +97,7 @@
     <None Include="BatchVerify_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
-    <EmbeddedResource Include="NodeTreeForm.resx">
+    <EmbeddedResource Include="UI\NodeTreeForm.resx">
       <DependentUpon>NodeTreeForm.cs</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>

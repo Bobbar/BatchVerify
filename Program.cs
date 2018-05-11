@@ -8,7 +8,7 @@ namespace BatchVerify
         static void Main(string[] args)
         {
             // Start the scan procress.
-            BatchScanner.Start();
+            Scanning.BatchScanner.Start();
 
             // Keep console window open until a user keypress.
             Console.ReadKey();

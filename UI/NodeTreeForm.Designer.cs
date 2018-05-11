@@ -1,4 +1,4 @@
-﻿namespace BatchVerify
+﻿namespace BatchVerify.UI
 {
     partial class NodeTreeForm
     {

@@ -1,8 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System.Xml.Serialization;
+using BatchVerify.Containers;
 
-namespace BatchVerify
+namespace BatchVerify.Data
 {
     public static class Serializer
     {

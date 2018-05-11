@@ -4,8 +4,11 @@ using System.Data;
 using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
+using BatchVerify.Containers;
+using BatchVerify.Data;
+using BatchVerify.UI;
 
-namespace BatchVerify
+namespace BatchVerify.Scanning
 {
     public static class BatchScanner
     {

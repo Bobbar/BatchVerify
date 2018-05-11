@@ -1,8 +1,9 @@
 ﻿using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
+using BatchVerify.Containers;
 
-namespace BatchVerify
+namespace BatchVerify.UI
 {
     public partial class NodeTreeForm : Form
     {

@@ -1,7 +1,7 @@
 ﻿using System.Data;
 using System.Data.SqlClient;
 
-namespace BatchVerify
+namespace BatchVerify.Data
 {
     public static class IvueConnection
     {
