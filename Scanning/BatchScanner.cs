@@ -93,21 +93,24 @@ namespace BatchVerify.Scanning
         {
             Console.WriteLine("\n \n *********** RESULTS ***********");
 
+            // App list.
             foreach (var app in apps)
             {
-                // App list.
+                
                 Console.WriteLine("[Application: " + app.Name + "] \n");
                 Console.WriteLine("     Queues:");
 
+                // Queue list.
                 foreach (var queue in app.Queues)
                 {
-                    // Queue list.
+                   
                     Console.WriteLine("     [" + app.Queues.IndexOf(queue) + "]  Name: " + queue.Name + "  ID: " + queue.ID + "  Owner: " + queue.Owner);
                     Console.WriteLine("         Bad Batches:");
 
+                    // Batch list.
                     foreach (var batch in queue.Batches)
                     {
-                        // Batch list.
+                        
 
                         // If the batch failed verification, include the list of missing files.
                         if (!batch.Verified)

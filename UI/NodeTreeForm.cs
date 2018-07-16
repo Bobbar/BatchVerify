@@ -24,6 +24,7 @@ namespace BatchVerify.UI
             {
                 var appNode = new TreeNode(app.Name);
 
+
                 foreach (var queue in app.Queues)
                 {
                     var queueNode = new TreeNode("QueueID: " + queue.ID + "  Name: " + queue.Name + "  Owner: " + queue.Owner + "  Batch Count: " + queue.Batches.Count);
@@ -33,6 +34,7 @@ namespace BatchVerify.UI
                     {
                         queueNode.BackColor = Color.DarkRed;
                     }
+
 
                     foreach (var batch in queue.Batches)
                     {
@@ -46,6 +48,7 @@ namespace BatchVerify.UI
                             if (batch.MissingFiles.Count < batch.PageCount)
                             {
                                 var fileNode = new TreeNode("Missing Files (" + batch.MissingFiles.Count + ")");
+
 
                                 foreach (var file in batch.MissingFiles)
                                 {
