@@ -5,6 +5,7 @@ namespace BatchVerify
 {
     class Program
     {
+        [STAThread]
         static void Main(string[] args)
         {
             // Start the scan procress.

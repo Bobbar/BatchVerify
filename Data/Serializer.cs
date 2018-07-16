@@ -2,18 +2,22 @@
 using System.IO;
 using System.Xml.Serialization;
 using BatchVerify.Containers;
+using System;
 
 namespace BatchVerify.Data
 {
     public static class Serializer
     {
-        private static string fileName = "PreviousResults.xml";
+        private static string GetFileName()
+        {
+            return string.Format("PreviousResults_{0}.xml", DateTime.Now.ToString("yyyy-MM-ddTHHmmss"));
+        }
 
         public static string ScanDataFilepath
         {
             get
             {
-                return Directory.GetCurrentDirectory() + @"\" + fileName;
+                return Directory.GetCurrentDirectory() + @"\" + GetFileName();
             }
         }
 
@@ -27,14 +31,14 @@ namespace BatchVerify.Data
                 sw.Close();
             }
         }
-
-        public static List<App> DeSerializeAppList()
+                
+        public static List<App> DeSerializeAppList(string filePath)
         {
             List<App> appList;
 
             var mySerializer = new XmlSerializer(typeof(List<App>));
 
-            using (var fs = new FileStream(ScanDataFilepath, FileMode.Open))
+            using (var fs = new FileStream(filePath, FileMode.Open))
             {
                 appList = (List<App>)mySerializer.Deserialize(fs);
             }

@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 using BatchVerify.Containers;
 using BatchVerify.Data;
 using BatchVerify.UI;
+using System.Windows.Forms;
 
 namespace BatchVerify.Scanning
 {
@@ -27,7 +28,7 @@ namespace BatchVerify.Scanning
             // to reload or start a new scan.
             bool reloadPrevious = false;
 
-            if (HasPreviousScan())
+            if (HasPreviousScans())
             {
                 Console.WriteLine("Reload previous scan? (Y/N): ");
                 var prompt = Console.ReadLine();
@@ -44,13 +45,31 @@ namespace BatchVerify.Scanning
             }
             else
             {
-                // If reloading, deserialize the results from disk and populate the app list.
-                appList = Serializer.DeSerializeAppList();
+                // If reloading, prompt for a previous scan filename then deserialize the results from disk and populate the app list.
+                var selectedScan = PromptForPreviousScan();
+
+                if (string.IsNullOrEmpty(selectedScan))
+                    return;
+
+                appList = Serializer.DeSerializeAppList(selectedScan);
             }
 
             //  DisplayResultsConsole(appList);
 
             DisplayResultsNodeTree(appList);
+        }
+
+        private static string PromptForPreviousScan()
+        {
+            var fileDialog = new OpenFileDialog();
+            fileDialog.InitialDirectory = Directory.GetCurrentDirectory();
+            fileDialog.Filter = "XML Files (*.xml)|*.xml";
+
+            if (fileDialog.ShowDialog() == DialogResult.OK)
+            {
+                return fileDialog.FileName;
+            }
+            return string.Empty;
         }
 
         private static void StartNewScan()
@@ -80,9 +99,13 @@ namespace BatchVerify.Scanning
         /// Returns true if a previous serialized scan result is present in the current working directory.
         /// </summary>
         /// <returns></returns>
-        private static bool HasPreviousScan()
+        private static bool HasPreviousScans()
         {
-            return File.Exists(Serializer.ScanDataFilepath);
+            if (Directory.GetFiles(Directory.GetCurrentDirectory(), "PreviousResults*.xml").Length > 0)
+            {
+                return true;
+            }
+            return false;
         }
 
         /// <summary>
@@ -96,21 +119,21 @@ namespace BatchVerify.Scanning
             // App list.
             foreach (var app in apps)
             {
-                
+
                 Console.WriteLine("[Application: " + app.Name + "] \n");
                 Console.WriteLine("     Queues:");
 
                 // Queue list.
                 foreach (var queue in app.Queues)
                 {
-                   
+
                     Console.WriteLine("     [" + app.Queues.IndexOf(queue) + "]  Name: " + queue.Name + "  ID: " + queue.ID + "  Owner: " + queue.Owner);
                     Console.WriteLine("         Bad Batches:");
 
                     // Batch list.
                     foreach (var batch in queue.Batches)
                     {
-                        
+
 
                         // If the batch failed verification, include the list of missing files.
                         if (!batch.Verified)
