@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
+using BatchVerify.Scanning;
+using System.Diagnostics;
 
 namespace BatchVerify.UI
 {
@@ -81,7 +83,14 @@ namespace BatchVerify.UI
                             {
                                 // Create and populate a orphan file node.
                                 var orphanFileNode = new TreeNode("Orphan Files (" + batch.OrphanFiles.Count + ")");
-                                batch.OrphanFiles.ForEach(f => orphanFileNode.Nodes.Add(new TreeNode(f)));
+
+                                // Add the filepath to the node tag to allow later commands to open and view the file.
+                                foreach (var file in batch.OrphanFiles)
+                                {
+                                    var childNode = new TreeNode(file);
+                                    childNode.Tag = BatchScanner.GetFilePath(file, app, queue);
+                                    orphanFileNode.Nodes.Add(childNode);
+                                }
 
                                 // Add the orphan file node to the parent batch node.
                                 batchNode.Nodes.Add(orphanFileNode);
@@ -123,6 +132,22 @@ namespace BatchVerify.UI
             NodeTree.Nodes[0].Expand();
 
             this.ShowDialog();
+        }
+
+        private void NodeTree_NodeMouseDoubleClick(object sender, TreeNodeMouseClickEventArgs e)
+        {
+            try
+            {
+                if (e.Node.Tag != null && e.Node.Tag is string)
+                {
+                    Process.Start("mspaint.exe", e.Node.Tag.ToString());
+                }
+            }
+            catch
+            {
+                // Don't care.
+            }
+          
         }
     }
 }

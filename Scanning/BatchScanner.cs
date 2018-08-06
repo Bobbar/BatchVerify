@@ -430,5 +430,10 @@ namespace BatchVerify.Scanning
                 }
             }
         }
+
+        public static string GetFilePath(string filename, App app, ScanQueue queue)
+        {
+            return string.Format(@"{0}APP{1}\{2}.que\{3}", scanQPath, app.ID.ToString("0000"), queue.ID, filename);
+        }
     }
 }

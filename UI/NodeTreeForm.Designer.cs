@@ -41,6 +41,7 @@
             this.NodeTree.Name = "NodeTree";
             this.NodeTree.Size = new System.Drawing.Size(966, 901);
             this.NodeTree.TabIndex = 0;
+            this.NodeTree.NodeMouseDoubleClick += new System.Windows.Forms.TreeNodeMouseClickEventHandler(this.NodeTree_NodeMouseDoubleClick);
             // 
             // NodeTreeForm
             // 
