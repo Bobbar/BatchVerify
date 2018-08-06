@@ -18,6 +18,8 @@ namespace BatchVerify.Containers
 
         public List<string> MissingFiles { get; set; }
 
+        public List<string> OrphanFiles { get; set; }
+
         public Batch()
         {
         }
@@ -30,6 +32,7 @@ namespace BatchVerify.Containers
             Name = name;
             Verified = false;
             MissingFiles = new List<string>();
+            OrphanFiles = new List<string>();
         }
     }
 }

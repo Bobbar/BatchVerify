@@ -1,12 +1,10 @@
-﻿using System;
+﻿using BatchVerify.Containers;
+using BatchVerify.Data;
+using BatchVerify.UI;
+using System;
 using System.Collections.Generic;
 using System.Data;
 using System.IO;
-using System.Threading;
-using System.Threading.Tasks;
-using BatchVerify.Containers;
-using BatchVerify.Data;
-using BatchVerify.UI;
 using System.Windows.Forms;
 
 namespace BatchVerify.Scanning
@@ -119,22 +117,18 @@ namespace BatchVerify.Scanning
             // App list.
             foreach (var app in apps)
             {
-
                 Console.WriteLine("[Application: " + app.Name + "] \n");
                 Console.WriteLine("     Queues:");
 
                 // Queue list.
                 foreach (var queue in app.Queues)
                 {
-
                     Console.WriteLine("     [" + app.Queues.IndexOf(queue) + "]  Name: " + queue.Name + "  ID: " + queue.ID + "  Owner: " + queue.Owner);
                     Console.WriteLine("         Bad Batches:");
 
                     // Batch list.
                     foreach (var batch in queue.Batches)
                     {
-
-
                         // If the batch failed verification, include the list of missing files.
                         if (!batch.Verified)
                         {
@@ -234,48 +228,130 @@ namespace BatchVerify.Scanning
             Console.WriteLine("Verifying App: " + app.Name);
 
             // Iterate queues.
-            for (int q = 0; q < app.Queues.Count; q++)
+            foreach (var queue in app.Queues)
             {
-                var queue = app.Queues[q];
-
                 Console.WriteLine("Verifying Queue: " + queue.QueueTable + " ID:" + queue.ID + " Name: " + queue.Name + " Owner: " + queue.Owner);
 
+                // Collect all the batch files in the queue directory.
+                var queuePath = scanQPath + "APP" + app.ID.ToString("0000") + @"\" + queue.ID + @".que\";
+                var queueFiles = GetQueueFiles(queuePath);
+
                 // Iterate batches in parallel.
-                Parallel.For(0, queue.Batches.Count,
-                    index =>
+                foreach (var batch in queue.Batches)
+                {
+                    var batchID = batch.ID.ToString("00000");
+                    bool verified = true;
+
+                    // If the batch file collection contains a matching batch ID.
+                    if (queueFiles.ContainsKey(batchID))
                     {
-                        var batch = queue.Batches[index];
+                        // Get the collection of batch file on disk for the current batch ID.
+                        var batchDiskFiles = queueFiles[batchID];
 
-                        bool verified = true;
+                        // Collection holding the batch files found in the DB.
+                        // This will be compared to all the disk files later to find orphans.
+                        var batchDBFiles = new HashSet<string>();
 
-                        // Iterate batch pages.
+                        // Iterate batch pages:
                         for (int i = 0; i < batch.PageCount; i++)
                         {
                             // Non-zero based file index.
-                            // Build the filename and paths.
+                            // Build the filename.
                             int fileIdx = i + 1;
-                            string fileName = batch.ID.ToString("00000") + fileIdx.ToString("00000");
-                            string filePath = scanQPath + "APP" + app.ID.ToString("0000") + @"\" + queue.ID + @".que\" + fileName;
+                            string fileName = batchID + fileIdx.ToString("00000");
 
-                            // Check if the file on disk is present.
-                            if (!File.Exists(filePath))
+                            // Add the DB file to the collection.
+                            batchDBFiles.Add(fileName);
+
+                            // Check if the DB file is in the disk collection.
+                            if (!batchDiskFiles.Contains(fileName))
                             {
-                                // If not, set the verified bool and add the file info to a list.
+                                // If not, set the verified bool and add the file info to the missing file list.
                                 verified = false;
                                 batch.MissingFiles.Add("[" + fileIdx + "] - " + fileName);
                             }
 
                             // Increment scanned items for progress tracking.
-                            Interlocked.Increment(ref scannedItems);
+                            scannedItems++;
                         }
 
-                        // Set the batch verified bool.
-                        batch.Verified = verified;
+                        // Check for orphan files:
+                        // Iterate the disk files and find any not found in the DB files.
+                        foreach (var diskFile in batchDiskFiles)
+                        {
+                            // If the disk file is not found in the DB files, we have an orphan.
+                            if (!batchDBFiles.Contains(diskFile))
+                            {
+                                batch.OrphanFiles.Add(diskFile);
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // If no matching batch ID is found in the queue disk files,
+                        // this batch is an orphan or all files are missing.
+                        verified = false;
 
-                        // Update progress.
-                        DisplayProgress();
-                    });
+                        // We consider missing files "scanned" so add the page count to the scanned items for correct progress.
+                        scannedItems += batch.PageCount;
+                    }
+
+                    // Set the batch verified bool.
+                    batch.Verified = verified;
+
+                    // Update progress.
+                    DisplayProgress();
+                }
+
+                // Once all files have been checked we then compare the batches
+                // on disk with the DB batches to check for ophan batches.
+                // Itereate the batch files on disk.
+                foreach (var diskBatch in queueFiles)
+                {
+                    // Compare DB batches to disk batches.
+                    // If disk batch is not found in DB batches, we have an orphan.
+                    if (!queue.Batches.Exists(b => b.ID.ToString("00000") == diskBatch.Key))
+                    {
+                        // Add the orphan to the collection in the queue object.
+                        var batchId = Convert.ToInt32(diskBatch.Key);
+                        queue.OrphanBatches.Add(new Batch("NA", batchId, diskBatch.Value.Count, "NA"));
+                    }
+                }
             }
+        }
+
+        private static Dictionary<string, HashSet<string>> GetQueueFiles(string queuePath)
+        {
+            // Dictionary to store batch ids with the collection of filenames.
+            var fileDict = new Dictionary<string, HashSet<string>>();
+
+            // Get all the files in the queue directory.
+            string[] files = Directory.GetFiles(queuePath, "*.*");
+
+            // Itereate all the files and add them to the collections in the dictionary.
+            foreach (var file in files)
+            {
+                // Get fileinfo to parse out name.
+                var fileInfo = new FileInfo(file);
+
+                // First 5 chars is the batch ID.
+                var batchId = fileInfo.Name.Substring(0, 5);
+
+                // If the dictionary doesn't already have an entry for this ID, add it.
+                if (!fileDict.ContainsKey(batchId))
+                {
+                    var newList = new HashSet<string>();
+                    newList.Add(fileInfo.Name);
+                    fileDict.Add(batchId, newList);
+                }
+                else
+                {
+                    // Add files to extisting entry.
+                    fileDict[batchId].Add(fileInfo.Name);
+                }
+            }
+
+            return fileDict;
         }
 
         /// <summary>
@@ -288,12 +364,12 @@ namespace BatchVerify.Scanning
             var tmpList = new List<App>();
 
             // Query the DB for the collection of applications.
-            using (var results = IvueConnection.ReturnSqlTable("SELECT * FROM dbo.LSMVolSets"))
+            using (var results = IvueConnection.ReturnSqlTable("SELECT * FROM dbo.IVUEAPPLICATIONS"))
             {
                 foreach (DataRow row in results.Rows)
                 {
                     // Create and populate a new App instance.
-                    var newApp = new App(Convert.ToInt32(row["VSID"]), row["Name"].ToString());
+                    var newApp = new App(Convert.ToInt32(row["appid"]), row["name"].ToString());
 
                     // Populate the new instance with Queues.
                     PopulateQueues(newApp);
